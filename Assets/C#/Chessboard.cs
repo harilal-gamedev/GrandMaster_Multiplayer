@@ -11,7 +11,13 @@ public class Chessboard : MonoBehaviour
     [SerializeField] private Vector3 boardCenter = Vector3.zero;
 
 
+    [Header("Prefabs & Materials")]
+    [SerializeField] private GameObject[] prefabs;
+    [SerializeField] private Material[] teamMaterials;
+
+
     //Logic
+    private ChessPice[,] chessPieces;
     private const int TILE_COUNT_X = 8;
     private const int TILE_COUNT_Y = 8;
     private GameObject[,] tiles;
@@ -23,6 +29,10 @@ public class Chessboard : MonoBehaviour
     private void Awake()
     {
         GenerateAllTiles(tileSize, TILE_COUNT_X, TILE_COUNT_Y);
+
+        SpawnAllPices();
+
+        PositionAllPieces();
     }
 
     private void Update()
@@ -120,6 +130,92 @@ public class Chessboard : MonoBehaviour
         return tileObject;
     }
 
+
+    //Spwaning of the pieces
+    private void SpawnAllPices()
+    {
+        chessPieces = new ChessPice[TILE_COUNT_X, TILE_COUNT_Y];
+
+        int whiteTeam = 0, blackTeam = 1;
+
+        //White team
+        chessPieces[0, 0] = SpawnSinglePice(ChessPieceType.Rook, whiteTeam);
+        chessPieces[1, 0] = SpawnSinglePice(ChessPieceType.Knight, whiteTeam);
+        chessPieces[2, 0] = SpawnSinglePice(ChessPieceType.Bishop, whiteTeam);
+        chessPieces[3, 0] = SpawnSinglePice(ChessPieceType.King, whiteTeam);
+        chessPieces[4, 0] = SpawnSinglePice(ChessPieceType.Queen, whiteTeam);
+        chessPieces[5, 0] = SpawnSinglePice(ChessPieceType.Bishop, whiteTeam);
+        chessPieces[6, 0] = SpawnSinglePice(ChessPieceType.Knight, whiteTeam);
+        chessPieces[7, 0] = SpawnSinglePice(ChessPieceType.Rook, whiteTeam);
+
+        for(int i=0; i<TILE_COUNT_X; i++)
+        {
+            chessPieces[i, 1] = SpawnSinglePice(ChessPieceType.Pawn, whiteTeam);
+        }
+
+        //Black team
+        chessPieces[0, 7] = SpawnSinglePice(ChessPieceType.Rook, blackTeam);
+        chessPieces[1, 7] = SpawnSinglePice(ChessPieceType.Knight, blackTeam);
+        chessPieces[2, 7] = SpawnSinglePice(ChessPieceType.Bishop, blackTeam);
+        chessPieces[3, 7] = SpawnSinglePice(ChessPieceType.King, blackTeam);
+        chessPieces[4, 7] = SpawnSinglePice(ChessPieceType.Queen, blackTeam);
+        chessPieces[5, 7] = SpawnSinglePice(ChessPieceType.Bishop, blackTeam);
+        chessPieces[6, 7] = SpawnSinglePice(ChessPieceType.Knight, blackTeam);
+        chessPieces[7, 7] = SpawnSinglePice(ChessPieceType.Rook, blackTeam);
+
+        for (int i = 0; i < TILE_COUNT_X; i++)
+        {
+            chessPieces[i, 6] = SpawnSinglePice(ChessPieceType.Pawn, blackTeam);
+        }
+    }
+    private ChessPice SpawnSinglePice(ChessPieceType type, int team)
+    {
+        // Instantiate the chess piece
+        ChessPice cp = Instantiate(prefabs[(int)type - 1], transform).GetComponent<ChessPice>();
+
+        // Set the type and team
+        cp.type = type;
+        cp.team = team;
+
+        // Assign the material based on the team
+        cp.GetComponent<MeshRenderer>().material = teamMaterials[team];
+
+        // Position the chess piece at the center of its tile
+        Vector3 tilePosition = tiles[(int)cp.type, team].transform.position;
+        cp.transform.position = tilePosition + new Vector3(0, yOffset, 0); // Adjust yOffset if necessary to align
+
+        // Set rotation to (0, 0, 0)
+        cp.transform.localRotation = Quaternion.identity;
+
+        return cp;
+    }
+
+
+    //positioning
+    private void PositionAllPieces()
+    {
+        for(int x=0;x<TILE_COUNT_X;x++)
+        {
+            for(int y = 0; y < TILE_COUNT_Y; y++)
+            {
+                if (chessPieces[x,y] != null)
+                {
+                    PositionSinglePiece(x, y, true);
+                }
+            }
+        }
+    }
+
+    private void PositionSinglePiece(int x , int y , bool force = false)
+    {
+        chessPieces[x, y].currentX = x;
+        chessPieces[x,y].currentY = y;
+        chessPieces[x, y].transform.position = GetTileCenter(x, y);
+    }
+    private Vector3 GetTileCenter(int x, int y)
+    {
+        return new Vector3(x * tileSize, yOffset, y * tileSize) - bounds + new Vector3(tileSize / 2, 0, tileSize / 2);
+    }
 
     // finds the index of hited gameobject and returns to the "hitPositioin".
     private Vector2Int LookUpTileIndex(GameObject hitInfo)
